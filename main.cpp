@@ -1,25 +1,17 @@
-#include <iostream>
-#include <filesystem>
-#include <vector>
-#include <string>
-#include <set>
-#include "sqlite3.h"
+#include "common.h"
+#include "tagger_db.h"
 
-namespace fs = std::filesystem;
-
-using fs::path;
-using std::cout;
-using std::cin;
-using std::endl;
-using std::vector;
-using std::set;
-using std::string;
+sqlite3 *db = 0;
 
 path currentDir;
 
 set<path> existFiles;
 set<path> newFiles;
 set<path> removedFiles;
+
+const char* CREATE_TABLES = "create table if not exists tags(id int, name text);\n"
+                            "create table if not exists files(id int, path text);\n"
+                            "create table if not exists rels(fid int, tid int);";
 
 void scanForNewFiles()
 {
@@ -131,13 +123,19 @@ void tagNewFiles()
 //TODO: add russian letters support
 int main() {
     currentDir = fs::current_path();//TODO: add try-catch or pass error_code?
-    //existFiles - load from DB
-    sqlite3 *db = 0;
     char *err = 0;
     if ( sqlite3_open("tags.db", &db) )
+    {
         cout << "Couldn't open/create database: " << sqlite3_errmsg(db) << endl;
-
-    //sqlite3_exec(db, "zapros", 0, 0, &err)
+        return 1;
+    }
+    if ( sqlite3_exec(db, CREATE_TABLES, 0, 0, &err) )
+    {
+        cout << "SQL Error: " << err << endl;
+        sqlite3_free(err);
+        return 1;
+    }
+    loadExistFiles();
 
     scanForNewFiles();
     while ( int c = getChoice() )

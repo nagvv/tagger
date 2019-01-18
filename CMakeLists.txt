@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.12)
 project(nTagger)
 
+add_compile_definitions(SQLITE_THREADSAFE=0)
+
 set(CMAKE_CXX_STANDARD 17)
 
 SET(COMPILE_FLAGS "")
@@ -8,7 +10,7 @@ SET(LINK_FLAGS "")
 
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LINK_FLAGS}")
 
-add_executable(nTagger main.cpp)
+add_executable(nTagger main.cpp tagger_db.cpp tagger_db.h common.h)
 
 add_library(sqlite3 STATIC sqlite3.c)
 
