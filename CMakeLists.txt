@@ -10,4 +10,6 @@ SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LINK_FLAGS}")
 
 add_executable(nTagger main.cpp)
 
-target_link_libraries(nTagger -lstdc++fs)
+add_library(sqlite3 STATIC sqlite3.c)
+
+target_link_libraries(nTagger -static -lstdc++fs sqlite3)
