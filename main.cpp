@@ -49,7 +49,8 @@ int getChoice()
             "\t1) Tag new files\n"
             "\t2) Edit tags.\n"
             "\t3) Manage tags.\n"
-            "\t4) Search.\n" << endl;
+            "\t4) Search.\n"
+            "\t5) " << endl;
     int c;
     auto getStr = []()
     {
@@ -85,7 +86,10 @@ string clearTag( string dirty )
             if( ws )
                 continue;
             else
+            {
                 ws = true;
+                ret.push_back(c);
+            }
         }
         else
         {
@@ -101,8 +105,10 @@ string clearTag( string dirty )
 void tagNewFiles()
 {
     cin.clear(); cin.ignore();
-    for ( const auto &file : newFiles )
+    //for ( const auto &file : newFiles )
+    while ( !newFiles.empty() )
     {
+        auto &file = *newFiles.begin();
         string in; set<string> tags;
         cout << "Set tags for file: " << file.filename() << " separated by commas. Enter a empty line to stop tagging." << endl;
         std::getline(cin, in);
@@ -122,15 +128,28 @@ void tagNewFiles()
         }
         if ( addFile(file) )
             break;
-        existFiles.insert(file);
-        newFiles.erase(file);
         for ( auto &tag: tags )
             insertTag(file, tag);
+        existFiles.insert(file);
+        newFiles.erase(file);
     }
 }
 
+void searchByTags()
+{
+    cout << "Type one tag or enter empty line to cancel." << endl;
+    string in;
+    cin.clear(); cin.ignore();
+    std::getline(cin, in);
+    if ( in.empty() )
+        return;
+    for ( auto &file : getFilesByOneTag(clearTag(in)) )
+        cout << file << endl;
+}
+
 //TODO: add russian letters support
-int main() {
+int main()
+{
     currentDir = fs::current_path();//TODO: add try-catch or pass error_code?
     char *err = nullptr;
     if ( sqlite3_open("tags.db", &db) )
@@ -154,6 +173,8 @@ int main() {
             case 1:
                 tagNewFiles();
                 break;
+            case 4:
+                searchByTags();
             default:
                 cout << "Wrong number." <<endl;
         }
