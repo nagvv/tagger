@@ -1,7 +1,7 @@
 #include "common.h"
 #include "tagger_db.h"
 
-sqlite3 *db = 0;
+sqlite3 *db = nullptr;
 
 path currentDir;
 
@@ -9,9 +9,9 @@ set<path> existFiles;
 set<path> newFiles;
 set<path> removedFiles;
 
-const char* CREATE_TABLES = "create table if not exists tags(id int, name text);\n"
-                            "create table if not exists files(id int, path text);\n"
-                            "create table if not exists rels(fid int, tid int);";
+const char* CREATE_TABLES = "create table if not exists tags(id integer primary key, name text not null, unique(name));"
+                            "create table if not exists files(id integer primary key, path text not null, unique(path));"
+                            "create table if not exists rels(fid integer not null, tid integer not null, unique(fid, tid));";
 
 void scanForNewFiles()
 {
@@ -104,8 +104,13 @@ void tagNewFiles()
     for ( const auto &file : newFiles )
     {
         string in; set<string> tags;
-        cout << "Set tags for file: " << file.filename() << " separated by commas." << endl;
+        cout << "Set tags for file: " << file.filename() << " separated by commas. Enter a empty line to stop tagging." << endl;
         std::getline(cin, in);
+        if ( in.empty() )
+        {
+            cout << "Stop." << endl;
+            break;
+        }
         std::stringstream ss(in);
         while ( ss.good() )
         {
@@ -115,21 +120,25 @@ void tagNewFiles()
             if ( !tag.empty() )
                 tags.insert(tag);
         }
-        //TODO: insert file and tags to db
-        //TODO: add the possibility to stop tagging
+        if ( addFile(file) )
+            break;
+        existFiles.insert(file);
+        newFiles.erase(file);
+        for ( auto &tag: tags )
+            insertTag(file, tag);
     }
 }
 
 //TODO: add russian letters support
 int main() {
     currentDir = fs::current_path();//TODO: add try-catch or pass error_code?
-    char *err = 0;
+    char *err = nullptr;
     if ( sqlite3_open("tags.db", &db) )
     {
         cout << "Couldn't open/create database: " << sqlite3_errmsg(db) << endl;
         return 1;
     }
-    if ( sqlite3_exec(db, CREATE_TABLES, 0, 0, &err) )
+    if ( sqlite3_exec(db, CREATE_TABLES, nullptr, nullptr, &err) )
     {
         cout << "SQL Error: " << err << endl;
         sqlite3_free(err);
