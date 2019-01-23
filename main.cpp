@@ -42,15 +42,9 @@ void scanForNewFiles()
         cout << "\t" << path << endl;
 }
 
-int getChoice()
+int getChoice(string msg)
 {
-    cout << "Actions:\n"
-            "\t0) Exit. Not tagged files won't be added to database\n"
-            "\t1) Tag new files\n"
-            "\t2) Edit tags.\n"
-            "\t3) Manage tags.\n"
-            "\t4) Search.\n"
-            "\t5) " << endl;
+    cout << msg << endl;
     int c;
     auto getStr = []()
     {
@@ -147,6 +141,64 @@ void searchByTags()
         cout << file << endl;
 }
 
+void showTagList()
+{
+    vector<string> tags = getTagList();
+    if ( tags.size() <= 20 )
+    {
+        cout << "Tag list:" << endl;
+        for ( int i = 0; i < tags.size(); i++ ) {
+            cout << "\t" << i + 1 << ") " << tags[i] << endl;
+        }
+        cout << "press Enter..." << endl;
+        string trash;
+        cin.clear(); cin.ignore();
+        std::getline(cin, trash);
+    }
+    else
+    {
+        int curPage = 1;
+        int maxPage = tags.size() / 20 + 1;
+        int c = 1;
+        do
+        {
+            if ( c > 0 && c <= maxPage )
+            {
+                curPage = c;
+                cout << "Tag list (page " << curPage << "/" << maxPage << "):" << endl;
+                for ( int i = 20 * ( curPage - 1 ); i < tags.size() && i < 20 * curPage; i++ ) {
+                    cout << "\t" << i + 1 << ") " << tags[i] << endl;
+                }
+            }
+            else
+                cout << "Wrong page number." << endl;
+        } while ( c = getChoice("Actions:\n"
+                                "\t0) Back.\n"
+                                "\tN) Show page N.") );
+    }
+}
+
+void manageTags()
+{
+    while ( int c = getChoice("Actions:\n"
+                              "\t0) Back.\n"
+                              "\t1) Tag list.\n"
+                              "\t2) Remove tag.\n"
+                              "\t3) Rename tag.\n"
+                              "\t4) Merge tags.\n"
+                              "\t5) Edit file tags.") )
+    {
+        switch(c)
+        {
+            case 1:
+                showTagList();
+                break;
+            default:
+                cout << "Wrong number" << endl;
+        }
+    }
+}
+
 //TODO: add russian letters support
 int main()
 {
@@ -166,15 +218,25 @@ int main()
     loadExistFiles();
 
     scanForNewFiles();
-    while ( int c = getChoice() )
+    while ( int c = getChoice("Actions:\n"
+                              "\t0) Exit. Not tagged files won't be added to database\n"
+                              "\t1) Tag new files\n"
+                              "\t2) Manage tags.\n"
+                              "\t3) Search.\n"
+                              "\t4) \n"
+                              "\t5) ") )
     {
         switch(c)
         {
             case 1:
                 tagNewFiles();
                 break;
-            case 4:
+            case 2:
+                manageTags();
+                break;
+            case 3:
                 searchByTags();
+                break;
             default:
                 cout << "Wrong number." <<endl;
         }

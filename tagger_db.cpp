@@ -54,3 +54,18 @@ vector<path> getFilesByOneTag(string tag)
     execQuery(query, callback, &ret);
     return ret;
 }
+
+
+vector<string> getTagList()
+{
+    string query = "select name from tags;";
+    vector<string> ret;
+    auto callback = []( void *ret, int num, char** resultArr, char** columnNameArr ) -> int
+    {
+        for ( int i = 0; i < num; i++ )
+            static_cast<vector<string>*>(ret)->push_back( resultArr[i] );
+        return 0;
+    };
+    execQuery(query, callback, &ret);
+    return ret;
+}

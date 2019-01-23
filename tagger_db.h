@@ -11,4 +11,6 @@ int insertTag(path file, string tag);
 
 vector<path> getFilesByOneTag(string tag);
 
+vector<string> getTagList();
+
 #endif //NTAGGER_TAGGER_DB_H
