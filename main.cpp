@@ -1,6 +1,10 @@
 #include "common.h"
 #include "tagger_db.h"
 
+#if defined(_WIN32) || defined(WIN32)
+    #include <windows.h>
+#endif
+
 sqlite3 *db = nullptr;
 
 path currentDir;
@@ -42,7 +46,7 @@ void scanForNewFiles()
         cout << "\t" << path << endl;
 }
 
-int getChoice(string msg)
+int getChoice(const string &msg)
 {
     cout << msg << endl;
     int c;
@@ -157,8 +161,8 @@ void showTagList()
     }
     else
     {
-        int curPage = 1;
-        int maxPage = tags.size() / 20 + 1;
+        int curPage;
+        int maxPage = static_cast<int>(tags.size() / 20 + 1);
         int c = 1;
         do
         {
@@ -172,9 +176,9 @@ void showTagList()
             }
             else
                 cout << "Wrong page number." << endl;
-        } while ( c = getChoice("Actions:\n"
+        } while ((c = getChoice("Actions:\n"
                                 "\t0) Back.\n"
-                                "\tN) Show page N.") );
+                                "\tN) Show page N.")));
     }
 }
 
@@ -199,9 +203,14 @@ void manageTags()
     }
 }
 
-//TODO: add russian letters support
 int main()
 {
+#if defined(_WIN32) || defined(WIN32)
+    // Set console code page to UTF-8 so console known how to interpret string data
+    SetConsoleOutputCP(CP_UTF8);
+    // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
+    setvbuf(stdout, nullptr, _IOFBF, 1000);
+#endif
     currentDir = fs::current_path();//TODO: add try-catch or pass error_code?
     char *err = nullptr;
     if ( sqlite3_open("tags.db", &db) )
