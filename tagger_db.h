@@ -13,4 +13,8 @@ vector<path> getFilesByOneTag(string tag);
 
 vector<string> getTagList();
 
+int removeTag(string tag);
+
+int renameTag(string oldTag, string newTag);
+
 #endif //NTAGGER_TAGGER_DB_H

@@ -69,3 +69,16 @@ vector<string> getTagList()
     execQuery(query, callback, &ret);
     return ret;
 }
+
+int removeTag(string tag)
+{
+    string query = "delete from rels where tid=(select id from tags where name=\"" + tag + "\");\n"
+                   "delete from tags where name=\"" + tag + "\";";
+    return execQuery(query);
+}
+
+int renameTag(string oldTag, string newTag)
+{
+    string query = "update tags set name=\"" + newTag + "\" WHERE name=\"" + oldTag + "\";";
+    return execQuery(query);
+}

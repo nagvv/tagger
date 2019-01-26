@@ -6,6 +6,7 @@
 #endif
 
 sqlite3 *db = nullptr;
+const char *dbFile = "tags.db";
 
 path currentDir;
 
@@ -21,7 +22,10 @@ void scanForNewFiles()
 {
     std::set<path> allFiles;
     for (const auto &entry : fs::directory_iterator(currentDir))
-        allFiles.insert( fs::canonical( entry.path() ) ); //TODO: add ignoring db file
+    {
+        if ( entry.path().filename() != dbFile )
+            allFiles.insert( fs::canonical( entry.path() ) );
+    }
 
     for ( const auto &path : allFiles )
         if ( existFiles.find(path) == existFiles.end() )
@@ -145,6 +149,14 @@ void searchByTags()
         cout << file << endl;
 }
 
+inline void pressEnter()
+{
+    cout << "press Enter..." << endl;
+    string trash;
+    cin.clear(); cin.ignore();
+    std::getline(cin, trash);
+}
+
 void showTagList()
 {
     vector<string> tags = getTagList();
@@ -154,10 +166,7 @@ void showTagList()
         for ( int i = 0; i < tags.size(); i++ ) {
             cout << "\t" << i + 1 << ") " << tags[i] << endl;
         }
-        cout << "press Enter..." << endl;
-        string trash;
-        cin.clear(); cin.ignore();
-        std::getline(cin, trash);
+        pressEnter();
     }
     else
     {
@@ -189,14 +198,37 @@ void manageTags()
                               "\t1) Tag list.\n"
                               "\t2) Remove tag.\n"
                               "\t3) Rename tag.\n"
-                              "\t4) Merge tags.\n"
-                              "\t5) Edit file tags.") )
+                              "\t4) (NI)Merge tags.") )
     {
         switch(c)
         {
             case 1:
                 showTagList();
                 break;
+            case 2: {
+                string tagToRemove;
+                cout << "Type tag to remove." << endl;
+                cin >> tagToRemove; //TODO: add multiple tag removing
+                tagToRemove = clearTag(tagToRemove); //TODO: implement cancelling
+                removeTag( tagToRemove );
+                pressEnter();
+                break;
+            }
+            case 3: {
+                string oldTag, newTag;
+
+                cout << "Type tag to rename." << endl;//TODO: implement cancelling
+                cin >> oldTag;
+                oldTag = clearTag( oldTag );
+
+                cout << "Type new tag." << endl;//TODO: implement cancelling
+                cin >> newTag;
+                newTag = clearTag(newTag);
+
+                renameTag(oldTag, newTag);
+                pressEnter();
+                break;
+            }
             default:
                 cout << "Wrong number" << endl;
         }
@@ -206,14 +238,12 @@ void manageTags()
 int main()
 {
 #if defined(_WIN32) || defined(WIN32)
-    // Set console code page to UTF-8 so console known how to interpret string data
-    SetConsoleOutputCP(CP_UTF8);
-    // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
-    setvbuf(stdout, nullptr, _IOFBF, 1000);
+    SetConsoleOutputCP(CP_UTF8); // Set console code page to UTF-8 so console known how to interpret string data
+    setvbuf(stdout, nullptr, _IOFBF, 1000); // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
 #endif
     currentDir = fs::current_path();//TODO: add try-catch or pass error_code?
     char *err = nullptr;
-    if ( sqlite3_open("tags.db", &db) )
+    if ( sqlite3_open(dbFile, &db) )
     {
         cout << "Couldn't open/create database: " << sqlite3_errmsg(db) << endl;
         return 1;
@@ -230,10 +260,9 @@ int main()
     while ( int c = getChoice("Actions:\n"
                               "\t0) Exit. Not tagged files won't be added to database\n"
                               "\t1) Tag new files\n"
-                              "\t2) Manage tags.\n"
-                              "\t3) Search.\n"
-                              "\t4) \n"
-                              "\t5) ") )
+                              "\t2) (PI)Manage tags.\n"
+                              "\t3) (NI)Manage files.\n"
+                              "\t4) Search.") )
     {
         switch(c)
         {
@@ -244,6 +273,9 @@ int main()
                 manageTags();
                 break;
             case 3:
+                //manageFiles();
+                break;
+            case 4:
                 searchByTags();
                 break;
             default:
