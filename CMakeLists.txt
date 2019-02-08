@@ -10,7 +10,7 @@ SET(LINK_FLAGS "")
 
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LINK_FLAGS}")
 
-add_executable(tagger main.cpp tagger_db.cpp tagger_db.h common.h)
+add_executable(tagger main.cpp tagger_db.cpp tagger_db.h common.h tagger_fs.cpp tagger_fs.h)
 
 add_library(sqlite3 STATIC sqlite3.c)
 

@@ -1,4 +1,5 @@
 #include "common.h"
+#include "tagger_db.h"
 
 int execQuery(string query, int (*callback)( void*, int, char**, char** ) = nullptr, void *_1stArg = nullptr)
 {
@@ -20,35 +21,35 @@ int loadExistFiles()
             existFiles.insert(resultArr[i]);
         return 0;
     };
-    return execQuery("select path from files", callback);
+    return execQuery("select file from files", callback);
 }
 
-int addFile(path file)
+int addFile(string file)
 {
-    string query = "insert into files (path) values (\"" + file.string() + "\")";
+    string query = "insert into files (file) values (\"" + file + "\")";
     return execQuery(query);
 }
 
-int insertTag(path file, string tag)
+int insertTag(string file, string tag)
 {
     string query = "insert or ignore into tags (name) values (\"" + tag + "\")";
     if ( execQuery(query) )
         return 1;
-    query = "insert or ignore into rels values ((select (id) from files where path=\"" + file.string() + "\"),\n"
+    query = "insert or ignore into rels values ((select (id) from files where file=\"" + file + "\"),\n"
                                                "(select (id) from tags where name=\"" + tag + "\"));";
     return execQuery(query);
 }
 
-vector<path> getFilesByOneTag(string tag)
+vector<string> getFilesByOneTag(string tag)
 {
-    string query = "select files.path from files \n"
+    string query = "select files.file from files \n"
                    "inner join rels on files.id=rels.fid \n"
                    "inner join tags on rels.tid=tags.id\n"
                    "where tags.name=\"" + tag + "\";";
-    vector<path> ret;
+    vector<string> ret;
     auto callback = []( void *ret, int num, char** resultArr, char** columnNameArr ) -> int {
         for ( int i = 0; i < num; i++ )
-            static_cast<vector<path>*>(ret)->push_back( path(resultArr[i]) );
+            static_cast<vector<string>*>(ret)->push_back( resultArr[i] );
         return 0;
     };
     execQuery(query, callback, &ret);

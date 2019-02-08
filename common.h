@@ -19,6 +19,8 @@ using std::set;
 using std::string;
 
 extern sqlite3 *db;
+extern const char *dbFile;
+extern const char *resultFolder;
 
 extern path currentDir;
 

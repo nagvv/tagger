@@ -1,5 +1,6 @@
 #include "common.h"
 #include "tagger_db.h"
+#include "tagger_fs.h"
 
 #if defined(_WIN32) || defined(WIN32)
     #include <windows.h>
@@ -9,46 +10,15 @@ sqlite3 *db = nullptr;
 const char *dbFile = "tags.db";
 
 path currentDir;
+const char *resultFolder = "_result";
 
 set<path> existFiles;
 set<path> newFiles;
 set<path> removedFiles;
 
 const char* CREATE_TABLES = "create table if not exists tags(id integer primary key, name text not null, unique(name));"
-                            "create table if not exists files(id integer primary key, path text not null, unique(path));"
+                            "create table if not exists files(id integer primary key, file text not null, unique(file));"
                             "create table if not exists rels(fid integer not null, tid integer not null, unique(fid, tid));";
-
-void scanForNewFiles()
-{
-    std::set<path> allFiles;
-    for (const auto &entry : fs::directory_iterator(currentDir))
-    {
-        if ( entry.path().filename() != dbFile )
-            allFiles.insert( fs::canonical( entry.path() ) );
-    }
-
-    for ( const auto &path : allFiles )
-        if ( existFiles.find(path) == existFiles.end() )
-            newFiles.insert(path);
-
-    if (newFiles.empty())
-        cout << "No new files found. ";
-    else
-        cout << "new files: " << endl;
-    for ( const auto &path : newFiles )
-        cout << "\t" << path << endl;
-
-    for ( const auto &path : existFiles )
-        if ( allFiles.find(path) == allFiles.end() )
-            removedFiles.insert(path);
-
-    if (removedFiles.empty())
-        cout << "No files removed." << endl;
-    else
-        cout << "removed files: " << endl;
-    for ( const auto &path : removedFiles )
-        cout << "\t" << path << endl;
-}
 
 int getChoice(const string &msg)
 {
@@ -128,10 +98,10 @@ void tagNewFiles()
             if ( !tag.empty() )
                 tags.insert(tag);
         }
-        if ( addFile(file) )
+        if ( addFile(file.filename().string()) )
             break;
         for ( auto &tag: tags )
-            insertTag(file, tag);
+            insertTag(file.filename().string(), tag);
         existFiles.insert(file);
         newFiles.erase(file);
     }
@@ -145,8 +115,11 @@ void searchByTags()
     std::getline(cin, in);
     if ( in.empty() )
         return;
-    for ( auto &file : getFilesByOneTag(clearTag(in)) )
+    auto result = getFilesByOneTag(clearTag(in));
+    makeResult( result );
+    for ( auto &file : result )
         cout << file << endl;
+
 }
 
 inline void pressEnter()
@@ -235,13 +208,28 @@ void manageTags()
     }
 }
 
-int main()
+int main(int argc, char** argv)
 {
 #if defined(_WIN32) || defined(WIN32)
     SetConsoleOutputCP(CP_UTF8); // Set console code page to UTF-8 so console known how to interpret string data
     setvbuf(stdout, nullptr, _IOFBF, 1000); // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
 #endif
     currentDir = fs::current_path();//TODO: add try-catch or pass error_code?
+
+    if ( argc > 1 ) //TODO: add proper arguments handling
+    {
+        if ( argc > 2 )
+        {
+            if ( string(argv[1]) ==  "-s" )
+            {
+                cout << "INFO: multi-tag searching doesn't not implemented yet" << endl;
+                cout << "Searching: \"" << clearTag( argv[2] ) << "\", results in folder " << resultFolder << endl;
+                makeResult( getFilesByOneTag( clearTag( argv[2] ) ) );
+                return 0;
+            }
+        }
+    }
+
     char *err = nullptr;
     if ( sqlite3_open(dbFile, &db) )
     {
