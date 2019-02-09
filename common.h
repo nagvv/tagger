@@ -24,8 +24,8 @@ extern const char *resultFolder;
 
 extern path currentDir;
 
-extern set<path> existFiles;
-extern set<path> newFiles;
-extern set<path> removedFiles;
+extern set<string> existFiles;
+extern set<string> newFiles;
+extern set<string> missingFiles;
 
 #endif //NTAGGER_COMMON_H

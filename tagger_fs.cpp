@@ -3,11 +3,11 @@
 
 void scanForNewFiles()
 {
-    std::set<path> allFiles;
+    std::set<string> allFiles;
     for (const auto &entry : fs::directory_iterator(currentDir))
     {
         if ( entry.path().filename() != dbFile && entry.is_regular_file())
-            allFiles.insert( entry.path().filename() );
+            allFiles.insert( entry.path().filename().string() );
     }
 
     for ( const auto &path : allFiles )
@@ -17,19 +17,17 @@ void scanForNewFiles()
     if (newFiles.empty())
         cout << "No new files found. ";
     else
-        cout << "new files: " << endl;
+        cout << "New files: " << endl;
     for ( const auto &path : newFiles )
         cout << "\t" << path << endl;
 
     for ( const auto &path : existFiles )
         if ( allFiles.find(path) == allFiles.end() )
-            removedFiles.insert(path);
+            missingFiles.insert(path);
 
-    if (removedFiles.empty())
-        cout << "No files removed." << endl;
-    else
-        cout << "removed files: " << endl;
-    for ( const auto &path : removedFiles )
+    if ( !missingFiles.empty() )
+        cout << "Missing files: " << endl;
+    for ( const auto &path : missingFiles )
         cout << "\t" << path << endl;
 }
 

@@ -17,4 +17,6 @@ int removeTag(string tag);
 
 int renameTag(string oldTag, string newTag);
 
+int removeFile(string file);
+
 #endif //NTAGGER_TAGGER_DB_H

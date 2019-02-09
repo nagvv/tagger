@@ -18,7 +18,7 @@ int loadExistFiles()
 {
     auto callback = []( void*, int num, char** resultArr, char** columnNameArr ) -> int {
         for ( int i = 0; i < num; i++ )
-            existFiles.insert(resultArr[i]);
+            existFiles.insert( resultArr[i] );
         return 0;
     };
     return execQuery("select file from files", callback);
@@ -81,5 +81,12 @@ int removeTag(string tag)
 int renameTag(string oldTag, string newTag)
 {
     string query = "update tags set name=\"" + newTag + "\" WHERE name=\"" + oldTag + "\";";
+    return execQuery(query);
+}
+
+int removeFile(string file)
+{
+    string query = "delete from rels where fid=(select id from files where file=\"" + file + "\");\n"
+                   "delete from files where file=\"" + file + "\";";
     return execQuery(query);
 }

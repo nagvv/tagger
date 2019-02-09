@@ -12,9 +12,9 @@ const char *dbFile = "tags.db";
 path currentDir;
 const char *resultFolder = "_result";
 
-set<path> existFiles;
-set<path> newFiles;
-set<path> removedFiles;
+set<string> existFiles;
+set<string> newFiles;
+set<string> missingFiles;
 
 const char* CREATE_TABLES = "create table if not exists tags(id integer primary key, name text not null, unique(name));"
                             "create table if not exists files(id integer primary key, file text not null, unique(file));"
@@ -77,12 +77,11 @@ string clearTag( string dirty )
 void tagNewFiles()
 {
     cin.clear(); cin.ignore();
-    //for ( const auto &file : newFiles )
     while ( !newFiles.empty() )
     {
         auto &file = *newFiles.begin();
         string in; set<string> tags;
-        cout << "Set tags for file: " << file.filename() << " separated by commas. Enter a empty line to stop tagging." << endl;
+        cout << "Set tags for file: " << file << " separated by commas. Enter a empty line to stop tagging." << endl;
         std::getline(cin, in);
         if ( in.empty() )
         {
@@ -98,14 +97,45 @@ void tagNewFiles()
             if ( !tag.empty() )
                 tags.insert(tag);
         }
-        if ( addFile(file.filename().string()) )
+        if ( addFile( file ) )
             break;
         for ( auto &tag: tags )
-            insertTag(file.filename().string(), tag);
+            insertTag( file, tag );
         existFiles.insert(file);
         newFiles.erase(file);
     }
 }
+
+
+void removeMissingFiles()
+{
+    while ( !missingFiles.empty() )
+    {
+        auto &file = *missingFiles.begin();
+        int c = getChoice("Remove this file from db: \"" + file + "\"?\n"
+                          "\t0) Cancel.\n"
+                          "\t1) Remove.\n"
+                          "\t2) Remove all.");
+        if ( c == 0 )
+            break;
+        if ( c == 1 )
+        {
+            removeFile( file );
+            missingFiles.erase(file);
+            continue;
+        }
+        if ( c == 2 )
+        {
+            for ( auto &f : missingFiles )
+                removeFile( f );
+            missingFiles.clear();
+            break;
+        }
+        //else
+        cout << "Wrong number." <<endl;
+    }
+}
+
 
 void searchByTags()
 {
@@ -214,7 +244,7 @@ int main(int argc, char** argv)
     SetConsoleOutputCP(CP_UTF8); // Set console code page to UTF-8 so console known how to interpret string data
     setvbuf(stdout, nullptr, _IOFBF, 1000); // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
 #endif
-    currentDir = fs::current_path();//TODO: add try-catch or pass error_code?
+    currentDir = fs::current_path();
 
     if ( argc > 1 ) //TODO: add proper arguments handling
     {
@@ -245,12 +275,16 @@ int main(int argc, char** argv)
     loadExistFiles();
 
     scanForNewFiles();
-    while ( int c = getChoice("Actions:\n"
-                              "\t0) Exit. Not tagged files won't be added to database\n"
-                              "\t1) Tag new files\n"
-                              "\t2) (PI)Manage tags.\n"
-                              "\t3) (NI)Manage files.\n"
-                              "\t4) Search.") )
+
+    string choiceStr = "Actions:\n"
+                       "\t0) Exit. Not tagged files won't be added to database\n"
+                       "\t1) Tag new files\n"
+                       "\t2) (PI)Manage tags.\n"
+                       "\t3) (NI)Manage files.\n"
+                       "\t4) Search.";
+
+    string missingFilesExistChoiceStr = "\n\t5) Remove missing files from the db.";
+    while ( int c = getChoice( choiceStr + ( missingFiles.empty() ? "" : missingFilesExistChoiceStr ) ) )
     {
         switch(c)
         {
@@ -266,6 +300,13 @@ int main(int argc, char** argv)
             case 4:
                 searchByTags();
                 break;
+            case 5:
+                if ( !missingFiles.empty() )
+                {
+                    removeMissingFiles();
+                    break;
+                }
+                [[fallthrough]];
             default:
                 cout << "Wrong number." <<endl;
         }
