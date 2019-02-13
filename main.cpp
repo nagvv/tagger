@@ -16,7 +16,7 @@ set<string> existFiles;
 set<string> newFiles;
 set<string> missingFiles;
 
-const char* CREATE_TABLES = "create table if not exists tags(id integer primary key, name text not null, unique(name));"
+const char* CREATE_TABLES = "create table if not exists tags(id integer primary key, name text not null collate nocase, unique(name));"
                             "create table if not exists files(id integer primary key, file text not null, unique(file));"
                             "create table if not exists rels(fid integer not null, tid integer not null, unique(fid, tid));";
 
@@ -213,7 +213,7 @@ void manageTags()
                 cout << "Type tag to remove." << endl;
                 cin >> tagToRemove; //TODO: add multiple tag removing
                 tagToRemove = clearTag(tagToRemove); //TODO: implement cancelling
-                removeTag( tagToRemove );
+                removeTag( tagToRemove ); //TODO: add checking for file without tags
                 pressEnter();
                 break;
             }
@@ -246,20 +246,6 @@ int main(int argc, char** argv)
 #endif
     currentDir = fs::current_path();
 
-    if ( argc > 1 ) //TODO: add proper arguments handling
-    {
-        if ( argc > 2 )
-        {
-            if ( string(argv[1]) ==  "-s" )
-            {
-                cout << "INFO: multi-tag searching doesn't not implemented yet" << endl;
-                cout << "Searching: \"" << clearTag( argv[2] ) << "\", results in folder " << resultFolder << endl;
-                makeResult( getFilesByOneTag( clearTag( argv[2] ) ) );
-                return 0;
-            }
-        }
-    }
-
     char *err = nullptr;
     if ( sqlite3_open(dbFile, &db) )
     {
@@ -273,6 +259,20 @@ int main(int argc, char** argv)
         return 1;
     }
     loadExistFiles();
+
+    if ( argc > 1 ) //TODO: add proper arguments handling
+    {
+        if ( argc > 2 )
+        {
+            if ( string(argv[1]) ==  "-s" )
+            {
+                cout << "INFO: multi-tag searching doesn't not implemented yet" << endl;
+                cout << "Searching: \"" << clearTag( argv[2] ) << "\", results in folder " << resultFolder << endl;
+                makeResult( getFilesByOneTag( clearTag( argv[2] ) ) );
+                return 0;
+            }
+        }
+    }
 
     scanForNewFiles();
 
